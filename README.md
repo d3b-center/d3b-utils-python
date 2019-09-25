@@ -10,7 +10,7 @@ Using pip
 
 `pip install -e git+ssh://git@github.com/d3b-center/d3b-python-utils.git#egg=d3b_utils`
 
-## Included
+## Included so far
 
 ### Requests with retries
 
