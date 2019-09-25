@@ -8,7 +8,7 @@ Python >= 3.6
 
 Using pip
 
-`pip install -e git+ssh://git@github.com/d3b-center/d3b-python-utils.git#egg=d3b_utils`
+`pip install -e git+ssh://git@github.com/d3b-center/d3b-utils-python.git#egg=d3b_utils`
 
 ## Included so far
 
