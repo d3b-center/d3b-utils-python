@@ -28,7 +28,7 @@ Don't use the requests library directly. Use this instead.
 
 ### Fetch AWS Bucket contents
 
-Before using these functions, make sure to authenticate. use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
+Before using these functions, make sure to authenticate. Use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
 
 #### fetch the items in a folder in a bucket
 
