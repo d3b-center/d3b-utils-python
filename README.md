@@ -30,7 +30,7 @@ Don't use the requests library directly. Use this instead.
 
 Before using these functions, make sure to authenticate. Use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
 
-#### fetch the items in a folder in a bucket
+#### fetch the items in a bucket
 
 ```python
 fetch_aws_bucket_obj_info(
