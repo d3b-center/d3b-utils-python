@@ -1,53 +1,43 @@
 import boto3
 import pandas as pd
+import re
 
 
-def fetch_aws_bucket_obj_info(bucket_name, path_to_files):
+def fetch_aws_bucket_obj_info(bucket_name, search_prefixes=None):
     """
     List the objects of a bucket and the size of each object. Returns a
-    dict. Inspiration from
-    https://alexwlchan.net/2019/07/listing-s3-keys/
+    dict.
 
     :param bucket_name: The name of the bucket.
     :param path_to_files: path to the specific folder in the given
-        bucket where the files you want to list are. Exclude leading
-        '/' but include a '/' at the end of the folder. Should look
-        like 'path/to/files/'. This can also be a tuple of paths.
+        bucket where the files you want to list are. Automatically drops
+        leading '/'. Include a '/' at the end of folder names. Should look
+        like 'path/to/files/'. This can also be any iteratable.
     """
+    search_prefixes = search_prefixes or ""
 
-    client = boto3.client(service_name="s3")
+    if isinstance(search_prefixes, str):
+        search_prefixes = [search_prefixes]
 
-    # Create a paginator. This is needed to page through results when the
-    # number of objects in a bucket is greater than 1000.
+    # Drop leading non-word characters from prefixes
+    search_prefixes = [re.sub(r"^/", "", prefix) for prefix in search_prefixes]
+
+    session = boto3.session.Session(profile_name="saml")
+    client = session.client("s3")
 
     paginator = client.get_paginator("list_objects_v2")
 
-    kwargs = {"Bucket": bucket_name}
-
-    # We can pass the prefix directly to the S3 API.  If the user has passed
-    # a tuple or list of prefixes, we go through them one by one.
-    if isinstance(path_to_files, str):
-        prefixes = (path_to_files,)
+    # Aggregate files found under all of the given search prefixes
+    if isinstance(search_prefixes, str):
+        prefixes = (search_prefixes,)
     else:
-        prefixes = path_to_files
+        prefixes = search_prefixes
 
-    # Build the bucket contents dict
+    # Build the bucket contents
     bucket_contents = []
-
     for key_prefix in prefixes:
-        kwargs["Prefix"] = key_prefix
-
-        for page in paginator.paginate(**kwargs):
-            try:
-                contents = page["Contents"]
-            except KeyError:
-                return
-
-            for obj in contents:
-                bucket_contents.append(
-                    {"object_name": obj["Key"], "object_size": obj["Size"]}
-                )
-
+        for page in paginator.paginate(Bucket=bucket_name, Prefix=key_prefix):
+            bucket_contents.extend(page.get("Contents", []))
     return bucket_contents
 
 
