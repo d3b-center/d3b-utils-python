@@ -41,15 +41,9 @@ def fetch_aws_bucket_obj_info(
 
     paginator = client.get_paginator("list_objects_v2")
 
-    # Aggregate files found under all of the given search prefixes
-    if isinstance(search_prefixes, str):
-        prefixes = (search_prefixes,)
-    else:
-        prefixes = search_prefixes
-
     # Build the bucket contents
     bucket_contents = []
-    for key_prefix in prefixes:
+    for key_prefix in search_prefixes:
         for page in paginator.paginate(Bucket=bucket_name, Prefix=key_prefix):
             bucket_contents.extend(page.get("Contents", []))
 
