@@ -7,13 +7,18 @@ def fetch_aws_bucket_obj_info(
 ):
     """
     List the objects of a bucket and the size of each object. Returns a
-    dict.
+    list of dicts.
 
     :param bucket_name: The name of the bucket.
-    :param path_to_files: path to the specific folder in the given
+    :param search_prefixes: path to the specific folder in the given
         bucket where the files you want to list are. Automatically drops
         leading '/'. Include a '/' at the end of folder names. Should look
         like 'path/to/files/'. This can also be any iteratable.
+    :param drop_folders: Drops folders from the list of returned objects.
+        This is done by removing objects where `Size = 0`. Default is
+        False.
+    :param drop_path: Drops the path names to each object. Default is
+        False.
     """
     search_prefixes = search_prefixes or ""
 
