@@ -33,7 +33,7 @@ def fetch_aws_bucket_obj_info(
     if isinstance(search_prefixes, str):
         search_prefixes = [search_prefixes]
 
-    # Drop leading non-word characters from prefixes
+    # Drop leading slashes from prefixes
     search_prefixes = [re.sub(r"^/", "", prefix) for prefix in search_prefixes]
 
     session = boto3.session.Session(profile_name="saml")
