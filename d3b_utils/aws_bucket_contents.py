@@ -3,7 +3,9 @@ import pandas as pd
 import re
 
 
-def fetch_aws_bucket_obj_info(bucket_name, search_prefixes=None):
+def fetch_aws_bucket_obj_info(
+    bucket_name, search_prefixes=None, drop_folders=False, drop_path=False
+):
     """
     List the objects of a bucket and the size of each object. Returns a
     dict.
@@ -38,34 +40,16 @@ def fetch_aws_bucket_obj_info(bucket_name, search_prefixes=None):
     for key_prefix in prefixes:
         for page in paginator.paginate(Bucket=bucket_name, Prefix=key_prefix):
             bucket_contents.extend(page.get("Contents", []))
+
+    if drop_folders:
+        bucket_contents = [
+            object for object in bucket_contents if object["Size"] > 0
+        ]
+
+    if drop_path:
+        for index in range(len(bucket_contents)):
+            bucket_contents[index]["Key"] = bucket_contents[index]["Key"].split(
+                "/"
+            )[-1]
+
     return bucket_contents
-
-
-def get_bucket_as_df(bucket_name, bucket_path):
-    """
-    Wrapper around fetch_aws_bucket_obj_info that returns the dict as a
-    DataFrame. It also cleans out the folders from the list of files,
-    and drops paths from object names.
-
-    :param bucket_name: The name of the bucket.
-    :param path_to_files: specific folder in the given bucket where you
-        want to return lists of objects from. Can be a tuple of paths,
-        to only include files from those specific directories. Exclude
-        leading '/' but include a '/' at the end of the path. Should
-        look like 'path/to/files/'. This can also be a tuple of paths.
-
-    """
-    # Pull the contents of the bucket
-    bucket_contents = fetch_aws_bucket_obj_info(bucket_name, bucket_path)
-    # convert to a df
-    bucket_df = pd.DataFrame(bucket_contents)
-    # drop paths from the object names
-    bucket_df.object_name = bucket_df.object_name.str.split("/").str[-1]
-    # drop the folders out of the df
-    bucket_df = bucket_df[(bucket_df.object_name != "")]
-    # sort the buckets alphabetically
-    bucket_df = bucket_df.sort_values("object_name")
-    # reset indices
-    bucket_df = bucket_df.reset_index(drop=True)
-
-    return bucket_df

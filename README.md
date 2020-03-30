@@ -48,13 +48,26 @@ fetch_aws_bucket_obj_info(
 )
 ```
 
-#### Get the contents of a bucket in a df
+#### Drop folders from the list of returned objects
 
-This is a wrapper around `fetch_aws_bucket_obj_info()`, but turns the result into a DataFrame, drops the path to the files, drops out folders that are returned, and sorts the resulting data frame alphabetically. Calling this function on two buckets and comparing the resultant data frames can be used to see if two locations on AWS share the same files.
+The list of returned objects includes folders. You can drop the folders by setting `drop_folders=True`
 
 ```python
-get_bucket_as_df(
+fetch_aws_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/"
+  "source/pics/",
+  drop_folders=True,
+)
+```
+
+#### Remove Path names from the keys of the returned objects
+
+You can return the name of each object without the path name by setting `drop_path=True`. 
+
+```python
+fetch_aws_bucket_obj_info(
+  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "source/pics/",
+  drop_path=True
 )
 ```
