@@ -35,7 +35,7 @@ def fetch_aws_bucket_obj_info(
         search_prefixes = [search_prefixes]
 
     # Drop leading slashes from prefixes
-    search_prefixes = [re.sub(r"^/", "", prefix) for prefix in search_prefixes]
+    search_prefixes = [re.sub(r"^/+", "", prefix) for prefix in search_prefixes]
 
     session = boto3.session.Session(profile_name="saml")
     client = session.client("s3")
