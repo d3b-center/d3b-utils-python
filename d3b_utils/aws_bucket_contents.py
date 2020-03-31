@@ -11,10 +11,11 @@ def fetch_aws_bucket_obj_info(
 
     :param bucket_name: The name of the bucket.
     :type bucket_name: str
-    :param search_prefixes: path to the specific folder in the given
-        bucket where the files you want to list are. Automatically drops
-        leading '/'. Include a '/' at the end of folder names. Should look
-        like 'path/to/files/'. This can also be any iteratable.
+    :param search_prefixes: prefix(es) in the given bucket where the files
+        you want to list are. Automatically drops leading '/'. If you want
+        to search for items in a particular folder, include a '/' at the
+        end of folder names (e.g. 'path/to/files/'). This can also be an
+        iteratable.
     :type search_prefixes: str, list
     :param drop_folders: Drops folders from the list of returned objects.
         This is done by removing objects where `Size = 0`. Default is
