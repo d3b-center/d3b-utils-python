@@ -55,8 +55,8 @@ def fetch_aws_bucket_obj_info(
 
     if drop_path:
         for index in range(len(bucket_contents)):
-            bucket_contents[index]["Key"] = bucket_contents[index]["Key"].split(
-                "/"
-            )[-1]
+            _, _, bucket_contents[index]["Key"] = bucket_contents[index][
+                "Key"
+            ].rpartition("/")
 
     return bucket_contents
