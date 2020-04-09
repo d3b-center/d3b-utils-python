@@ -60,5 +60,7 @@ class Session(requests.Session):
         self.mount("https://", adapter)
 
     def send(self, req, **kwargs):
-        self.logger.debug(f"Sending request: {vars(req)}")
-        return super().send(req, **kwargs)
+        self.logger.debug(f"Sending request: {vars(req)}")        
+        resp = super().send(req, **kwargs)
+        self.logger.debug(f"Got response:  {vars(resp)}")
+        return resp
