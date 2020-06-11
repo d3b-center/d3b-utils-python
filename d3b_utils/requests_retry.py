@@ -2,8 +2,9 @@ import logging
 import os
 
 import requests
+from requests.exceptions import HTTPError
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3 import Retry
 
 
 class Session(requests.Session):
@@ -40,8 +41,13 @@ class Session(requests.Session):
         method_whitelist=False,
         **kwargs,
     ):
+        self.status_forcelist = status_forcelist
         self.logger = logging.getLogger(type(self).__name__)
         super().__init__()
+
+        # we'll force raise_on_status to False so we can get the server response,
+        # because otherwise urllib3 hides the error body after retry exhaustion
+        kwargs.pop("raise_on_status", None)
 
         # environmental retries override (useful for testing)
         total = int(os.environ.get("MAX_RETRIES_ON_CONN_ERROR", total))
@@ -53,6 +59,7 @@ class Session(requests.Session):
             backoff_factor=backoff_factor,
             status_forcelist=status_forcelist,
             method_whitelist=method_whitelist,
+            raise_on_status=False,
             **kwargs,
         )
         adapter = HTTPAdapter(max_retries=retry)
@@ -60,7 +67,13 @@ class Session(requests.Session):
         self.mount("https://", adapter)
 
     def send(self, req, **kwargs):
-        self.logger.debug(f"Sending request: {vars(req)}")        
+        self.logger.debug(f"Sending request: {vars(req)}")
         resp = super().send(req, **kwargs)
         self.logger.debug(f"Got response:  {vars(resp)}")
+        try:
+            if resp.status_code in self.status_forcelist:
+                resp.raise_for_status()
+        except HTTPError:
+            self.logger.debug(f"MAX RETRIES EXCEEDED. Error body:  {resp.text}")
+            raise
         return resp
