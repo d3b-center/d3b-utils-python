@@ -54,9 +54,12 @@ def fetch_aws_bucket_obj_info(
         ]
 
     if drop_path:
-        for index in range(len(bucket_contents)):
-            _, _, bucket_contents[index]["Key"] = bucket_contents[index][
-                "Key"
-            ].rpartition("/")
+        for object in bucket_contents:
+            _, _, object["Key"] = object["Key"].rpartition("/")
+
+    for object in bucket_contents:
+        object["Bucket"] = bucket_name
+        # ETag comes back with unnecessary quotation marks, so strip them
+        object["ETag"] = object["ETag"].strip('"')
 
     return bucket_contents
