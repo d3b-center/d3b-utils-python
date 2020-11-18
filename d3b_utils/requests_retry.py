@@ -20,7 +20,7 @@ class Session(requests.Session):
     :param backoff_factor: sleep up to Retry.BACKOFF_MAX between retries for
         backoff_factor * (2 ** (number_of_retries_so_far - 1))
     :param status_forcelist: set of integer HTTP status codes to retry on
-    :param method_whitelist: set of uppercased HTTP method verbs to retry on,
+    :param allowed_methods: set of uppercased HTTP method verbs to retry on,
         or False means all
     :param \\*\\*kwargs: other urllib3.util.retry.Retry kwargs
 
@@ -38,7 +38,8 @@ class Session(requests.Session):
         status=10,
         backoff_factor=5,
         status_forcelist=(500, 502, 503, 504),
-        method_whitelist=False,
+        allowed_methods=False,
+        method_whitelist=False,  # preserved for backwards compatibility
         **kwargs,
     ):
         self.status_forcelist = status_forcelist
@@ -52,13 +53,14 @@ class Session(requests.Session):
         # environmental retries override (useful for testing)
         total = int(os.environ.get("MAX_RETRIES_ON_CONN_ERROR", total))
 
+        allowed_methods = allowed_methods or method_whitelist
         retry = Retry(
             total=total,
             read=read,
             connect=connect,
             backoff_factor=backoff_factor,
             status_forcelist=status_forcelist,
-            method_whitelist=method_whitelist,
+            allowed_methods=allowed_methods,
             raise_on_status=False,
             **kwargs,
         )
