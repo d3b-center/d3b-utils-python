@@ -30,6 +30,10 @@ Don't use the requests library directly. Use this instead.
 
 Before using these functions, make sure to authenticate. Use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
 
+```Python
+from d3b_utils.aws_bucket_contents import fetch_aws_bucket_obj_info
+```
+
 #### fetch the items in a bucket
 
 ```python
