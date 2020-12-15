@@ -54,16 +54,28 @@ class Session(requests.Session):
         total = int(os.environ.get("MAX_RETRIES_ON_CONN_ERROR", total))
 
         allowed_methods = allowed_methods or method_whitelist
-        retry = Retry(
-            total=total,
-            read=read,
-            connect=connect,
-            backoff_factor=backoff_factor,
-            status_forcelist=status_forcelist,
-            allowed_methods=allowed_methods,
-            raise_on_status=False,
-            **kwargs,
-        )
+        try:
+            retry = Retry(
+                total=total,
+                read=read,
+                connect=connect,
+                backoff_factor=backoff_factor,
+                status_forcelist=status_forcelist,
+                allowed_methods=allowed_methods,
+                raise_on_status=False,
+                **kwargs,
+            )
+        except TypeError:
+            retry = Retry(
+                total=total,
+                read=read,
+                connect=connect,
+                backoff_factor=backoff_factor,
+                status_forcelist=status_forcelist,
+                method_whitelist=allowed_methods,
+                raise_on_status=False,
+                **kwargs,
+            )
         adapter = HTTPAdapter(max_retries=retry)
         self.mount("http://", adapter)
         self.mount("https://", adapter)
