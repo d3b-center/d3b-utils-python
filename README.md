@@ -31,22 +31,22 @@ Don't use the requests library directly. Use this instead.
 Before using these functions, make sure to authenticate. Use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
 
 ```Python
-from d3b_utils.aws_bucket_contents import fetch_aws_bucket_obj_info
+from d3b_utils.aws_bucket_contents import fetch_bucket_obj_info
 ```
 
-#### fetch the items in a bucket
+#### list the items in a bucket
 
 ```python
-fetch_aws_bucket_obj_info(
+contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
   "source/pics/"
 )
 ```
 
-#### fetch the items in multiple folders in a bucket
+#### list the items in multiple folders in a bucket
 
 ```python
-fetch_aws_bucket_obj_info(
+contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
   ["source/pics/", "source/uploads/"]
 )
@@ -57,7 +57,7 @@ fetch_aws_bucket_obj_info(
 The list of returned objects includes folders. You can drop the folders by setting `drop_folders=True`
 
 ```python
-fetch_aws_bucket_obj_info(
+contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
   "source/pics/",
   drop_folders=True,
@@ -69,9 +69,20 @@ fetch_aws_bucket_obj_info(
 You can return the name of each object without the path name by setting `drop_path=True`. 
 
 ```python
-fetch_aws_bucket_obj_info(
+contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
   "source/pics/",
   drop_path=True
+)
+```
+
+#### Write the contents to a delimited file
+
+```python
+contents = fetch_bucket_obj_info(
+  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "source/pics/",
+  drop_folders=True,
+  output_filename="my_bucket_contents.tsv"
 )
 ```
