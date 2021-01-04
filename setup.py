@@ -13,7 +13,11 @@ with open(path.join(root_dir, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="d3b-utils",
-    version="0.1.0",
+    use_scm_version={
+        "local_scheme": "dirty-tag",
+        "version_scheme": "post-release",
+    },
+    setup_requires=["setuptools_scm"],
     description="Reusable D3b python utilities",
     long_description=long_description,
     long_description_content_type="text/markdown",
