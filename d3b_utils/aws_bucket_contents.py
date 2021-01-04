@@ -1,9 +1,16 @@
 import boto3
 import re
+import csv
+from itertools import chain
 
 
-def fetch_aws_bucket_obj_info(
-    bucket_name, search_prefixes=None, drop_folders=False, drop_path=False
+def fetch_bucket_obj_info(
+    bucket_name,
+    search_prefixes=None,
+    drop_folders=False,
+    drop_path=False,
+    output_filename=None,
+    delim=None,
 ):
     """
     List the objects of a bucket and the size of each object. Returns a
@@ -24,6 +31,10 @@ def fetch_aws_bucket_obj_info(
     :param drop_path: Drops the path names to each object. Default is
         False.
     :type drop_folders: bool, optional
+    :param output_filename: If provided, write delimited results to this file
+    :type output_filename: str, optional
+    :param delim: If writing output to a delimited file, use this delimiter
+    :type delim: str, optional, default based on output_filename extension
 
     :returns: list of dicts, where each dict has information about each
         object in the bucket (or each object that has a path matching
@@ -62,4 +73,21 @@ def fetch_aws_bucket_obj_info(
         # ETag comes back with unnecessary quotation marks, so strip them
         object["ETag"] = object["ETag"].strip('"')
 
+    # Write to file
+    if output_filename:
+        delimiters = {"tsv": "\t", "csv": ","}
+        delim = delim or delimiters[output_filename.rsplit(".", 1)[-1].lower()]
+        assert delim, "File output delimiter not known. Cannot proceed."
+        keys = set(chain(*(d.keys() for d in bucket_contents)))
+        with open(output_filename, "w") as f:
+            dict_writer = csv.DictWriter(
+                f, restval="", fieldnames=keys, delimiter=delim
+            )
+            dict_writer.writeheader()
+            dict_writer.writerows(bucket_contents)
+
     return bucket_contents
+
+
+# backwards compatibility
+fetch_aws_bucket_obj_info = fetch_bucket_obj_info
