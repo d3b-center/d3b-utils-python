@@ -64,18 +64,6 @@ contents = fetch_bucket_obj_info(
 )
 ```
 
-#### Remove Path names from the keys of the returned objects
-
-You can return the name of each object without the path name by setting `drop_path=True`. 
-
-```python
-contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/",
-  drop_path=True
-)
-```
-
 #### Write the contents to a delimited file
 
 ```python

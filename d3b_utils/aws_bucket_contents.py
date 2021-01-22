@@ -3,12 +3,10 @@ import re
 import csv
 from itertools import chain
 
-
 def fetch_bucket_obj_info(
     bucket_name,
     search_prefixes=None,
     drop_folders=False,
-    drop_path=False,
     output_filename=None,
     delim=None,
 ):
@@ -26,9 +24,6 @@ def fetch_bucket_obj_info(
     :type search_prefixes: str, list
     :param drop_folders: Drops folders from the list of returned objects.
         This is done by removing objects where `Size = 0`. Default is
-        False.
-    :type drop_folders: bool, optional
-    :param drop_path: Drops the path names to each object. Default is
         False.
     :type drop_folders: bool, optional
     :param output_filename: If provided, write delimited results to this file
@@ -64,14 +59,12 @@ def fetch_bucket_obj_info(
             object for object in bucket_contents if object["Size"] > 0
         ]
 
-    if drop_path:
-        for object in bucket_contents:
-            _, _, object["Key"] = object["Key"].rpartition("/")
-
     for object in bucket_contents:
         object["Bucket"] = bucket_name
         # ETag comes back with unnecessary quotation marks, so strip them
         object["ETag"] = object["ETag"].strip('"')
+        object["Filepath"] = f"s3://{bucket_name}/{object['Key']}"
+        *_, object["Filename"] = object["Key"].rpartition("/")
 
     # Write to file
     if output_filename:
