@@ -1,5 +1,6 @@
 import logging
 import os
+from pprint import pformat
 
 import requests
 from requests.exceptions import HTTPError
@@ -40,9 +41,11 @@ class Session(requests.Session):
         status_forcelist=(500, 502, 503, 504),
         allowed_methods=False,
         method_whitelist=False,  # preserved for backwards compatibility
+        pretty_print=False,
         **kwargs,
     ):
         self.status_forcelist = status_forcelist
+        self.pretty_print = pretty_print
         self.logger = logging.getLogger(type(self).__name__)
         super().__init__()
 
@@ -81,9 +84,24 @@ class Session(requests.Session):
         self.mount("https://", adapter)
 
     def send(self, req, **kwargs):
-        self.logger.debug(f"Sending request: {vars(req)}")
+        msg = pformat(vars(req)) if self.pretty_print else vars(req)
+        self.logger.debug(f"---- SENDING REQUEST ----\n{msg}")
+
         resp = super().send(req, **kwargs)
-        self.logger.debug(f"Got response:  {vars(resp)}")
+
+        # Try parsing response body as json for prettier logging
+        resp_dict = vars(resp)
+        try:
+            resp_dict['_content'] = resp.json()
+        except Exception:
+            pass
+
+        msg = pformat(resp_dict) if self.pretty_print else resp_dict
+        self.logger.debug(
+            f"---- GOT RESPONSE, STATUS: {resp.status_code} ----"
+            f"\n{msg}\n"
+        )
+
         try:
             if resp.status_code in self.status_forcelist:
                 resp.raise_for_status()
