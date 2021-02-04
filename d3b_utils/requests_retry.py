@@ -90,7 +90,7 @@ class Session(requests.Session):
         resp = super().send(req, **kwargs)
 
         # Try parsing response body as json for prettier logging
-        resp_dict = vars(resp)
+        resp_dict = vars(resp).copy()
         try:
             resp_dict['_content'] = resp.json()
         except Exception:
