@@ -9,6 +9,7 @@ def fetch_bucket_obj_info(
     drop_folders=False,
     output_filename=None,
     delim=None,
+    profile="saml",
 ):
     """
     List the objects of a bucket and the size of each object. Returns a
@@ -30,6 +31,8 @@ def fetch_bucket_obj_info(
     :type output_filename: str, optional
     :param delim: If writing output to a delimited file, use this delimiter
     :type delim: str, optional, default based on output_filename extension
+    :param profile: aws profile
+    :type profile: str, optional
 
     :returns: list of dicts, where each dict has information about each
         object in the bucket (or each object that has a path matching
@@ -43,7 +46,7 @@ def fetch_bucket_obj_info(
     # Drop leading slashes from prefixes
     search_prefixes = [re.sub(r"^/+", "", prefix) for prefix in search_prefixes]
 
-    session = boto3.session.Session(profile_name="saml")
+    session = boto3.session.Session(profile_name=profile)
     client = session.client("s3")
 
     paginator = client.get_paginator("list_objects_v2")

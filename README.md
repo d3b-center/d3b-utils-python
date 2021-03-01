@@ -74,3 +74,15 @@ contents = fetch_bucket_obj_info(
   output_filename="my_bucket_contents.tsv"
 )
 ```
+
+#### Specify the AWS Profile 
+
+Specify the profile name. If not authenticating with `chopaws`, set the profile name. 
+
+```python
+contents = fetch_bucket_obj_info(
+  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "source/pics/",
+  profile="user1"
+)
+```
