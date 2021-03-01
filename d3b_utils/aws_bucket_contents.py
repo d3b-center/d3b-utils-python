@@ -3,6 +3,7 @@ import re
 import csv
 from itertools import chain
 
+
 def fetch_bucket_obj_info(
     bucket_name,
     search_prefixes=None,
@@ -59,15 +60,14 @@ def fetch_bucket_obj_info(
 
     if drop_folders:
         bucket_contents = [
-            object for object in bucket_contents if object["Size"] > 0
+            object for object in bucket_contents 
+            if ((object["Key"][-1] != "/") or (object["Size"] > 0))
         ]
 
     for object in bucket_contents:
         object["Bucket"] = bucket_name
         # ETag comes back with unnecessary quotation marks, so strip them
         object["ETag"] = object["ETag"].strip('"')
-        object["Filepath"] = f"s3://{bucket_name}/{object['Key']}"
-        *_, object["Filename"] = object["Key"].rpartition("/")
 
     # Write to file
     if output_filename:
