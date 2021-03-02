@@ -34,21 +34,21 @@ Before using these functions, make sure to authenticate. Use [`chopaws`](https:/
 from d3b_utils.aws_bucket_contents import fetch_bucket_obj_info
 ```
 
-#### list the items in a bucket
+#### List the items in a bucket
 
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/"
+  search_prefixes="source/pics/"
 )
 ```
 
-#### list the items in multiple folders in a bucket
+#### List the items in multiple folders in a bucket
 
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  ["source/pics/", "source/uploads/"]
+  search_prefixes=["source/pics/", "source/uploads/"]
 )
 ```
 
@@ -59,7 +59,6 @@ The list of returned objects includes folders. You can drop the folders by setti
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/",
   drop_folders=True,
 )
 ```
@@ -69,7 +68,7 @@ contents = fetch_bucket_obj_info(
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/",
+  search_prefixes="source/pics/",
   drop_folders=True,
   output_filename="my_bucket_contents.tsv"
 )
@@ -82,7 +81,6 @@ Specify the profile name. If not authenticating with `chopaws`, set the profile 
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  "source/pics/",
   profile="user1"
 )
 ```
