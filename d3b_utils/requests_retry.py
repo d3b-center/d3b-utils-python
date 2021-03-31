@@ -8,6 +8,28 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 
+class BetterHTTPError(requests.exceptions.HTTPError):
+    def __init__(self, e):
+        try:
+            msg = e.response.json()
+        except Exception:
+            msg = e.response.text
+        if "Authorization" in e.request.headers:
+            e.request.headers["Authorization"] = "<REDACTED>"
+        super().__init__(
+            "\n" + pformat(
+                {
+                    "HTTP status": e.response.status_code,
+                    "sent": vars(e.request), 
+                    "response": msg,
+                },
+                sort_dicts=False
+            ), 
+            request=e.request,
+            response=e.response
+        )
+
+
 class Session(requests.Session):
     """
     requests.Session that retries on recoverable errors.
@@ -105,7 +127,7 @@ class Session(requests.Session):
         try:
             if resp.status_code in self.status_forcelist:
                 resp.raise_for_status()
-        except HTTPError:
+        except HTTPError as e:
             self.logger.debug(f"MAX RETRIES EXCEEDED. Error body:  {resp.text}")
-            raise
+            raise BetterHTTPError(e).with_traceback(e.__traceback__) from None
         return resp
