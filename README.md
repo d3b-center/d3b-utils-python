@@ -92,6 +92,6 @@ Return object versions and delete markers.
 ```python
 contents = fetch_bucket_obj_info(
   "kf-study-us-east-1-dev-sd-me0wme0w",
-  get_versions=True
+  all_versions=True
 )
 ```
