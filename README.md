@@ -84,3 +84,14 @@ contents = fetch_bucket_obj_info(
   profile="user1"
 )
 ```
+
+#### Get Object versions and delete markers
+
+Return object versions and delete markers. 
+
+```python
+contents = fetch_bucket_obj_info(
+  "kf-study-us-east-1-dev-sd-me0wme0w",
+  all_versions=True
+)
+```
