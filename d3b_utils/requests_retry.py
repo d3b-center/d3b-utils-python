@@ -14,19 +14,22 @@ class BetterHTTPError(HTTPError):
             msg = e.response.json()
         except Exception:
             msg = e.response.text
+
         if "Authorization" in e.request.headers:
             e.request.headers["Authorization"] = "<REDACTED>"
+
         super().__init__(
-            "\n" + pformat(
+            "\n"
+            + pformat(
                 {
                     "HTTP status": e.response.status_code,
-                    "sent": vars(e.request), 
+                    "sent": vars(e.request),
                     "response": msg,
                 },
-                sort_dicts=False
-            ), 
+                sort_dicts=False,
+            ),
             request=e.request,
-            response=e.response
+            response=e.response,
         )
 
 
@@ -114,14 +117,13 @@ class Session(requests.Session):
         # Try parsing response body as json for prettier logging
         resp_dict = vars(resp).copy()
         try:
-            resp_dict['_content'] = resp.json()
+            resp_dict["_content"] = resp.json()
         except Exception:
             pass
 
         msg = pformat(resp_dict) if self.pretty_print else resp_dict
         self.logger.debug(
-            f"---- GOT RESPONSE, STATUS: {resp.status_code} ----"
-            f"\n{msg}\n"
+            f"---- GOT RESPONSE, STATUS: {resp.status_code} ----\n{msg}\n"
         )
 
         try:
