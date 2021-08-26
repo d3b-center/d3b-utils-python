@@ -1,10 +1,11 @@
 import logging
 import os
+import sys
 from pprint import pformat
 
 import requests
-from requests.exceptions import HTTPError
 from requests.adapters import HTTPAdapter
+from requests.exceptions import HTTPError
 from urllib3 import Retry
 
 
@@ -18,19 +19,17 @@ class BetterHTTPError(HTTPError):
         if "Authorization" in e.request.headers:
             e.request.headers["Authorization"] = "<REDACTED>"
 
-        super().__init__(
-            "\n"
-            + pformat(
-                {
-                    "HTTP status": e.response.status_code,
-                    "sent": vars(e.request),
-                    "response": msg,
-                },
-                sort_dicts=False,
-            ),
-            request=e.request,
-            response=e.response,
-        )
+        body = {
+            "HTTP status": e.response.status_code,
+            "sent": vars(e.request),
+            "response": msg,
+        }
+        if (sys.version_info.major >= 3) and (sys.version_info.minor >= 8):
+            body = "\n" + pformat(body, sort_dicts=False)
+        else:
+            body = "\n" + pformat(body)
+
+        super().__init__(body, request=e.request, response=e.response)
 
 
 class Session(requests.Session):
