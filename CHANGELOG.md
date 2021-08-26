@@ -1,5 +1,17 @@
 # D3b Python Utilities Change History
 
+## Release 0.5.1
+
+### Summary
+
+- Emojis: 🥅 x1
+- Categories: Fixes x1
+
+### New features and changes
+
+- [#18](https://github.com/d3b-center/d3b-utils-python/pull/18) - 🥅 Check python version before using sort_dicts flag - [11886469](https://github.com/d3b-center/d3b-utils-python/commit/118864697609f19fe5ecd6db4aa9b5f471547a56) by [fiendish](https://github.com/fiendish)
+
+
 ## Release 0.5.0
 
 ### Summary
