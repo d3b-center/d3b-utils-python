@@ -1,9 +1,61 @@
 import csv
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
 import boto3
+
+
+def fetch_obj_list_info(pathlist, profile="saml", all_versions=False):
+    """List the metadata for a given set of S3 objects. Like
+    fetch_bucket_obj_info but for a list of file paths instead of a bucket.
+
+    :param pathlist: list of s3 file paths
+    :type pathlist: list
+    :param profile: see fetch_bucket_obj_info
+    :param all_versions: see fetch_bucket_obj_info
+
+    :return: see fetch_bucket_obj_info
+    """
+    bucket_paths = {}
+    for path in pathlist:
+        bucket, key = re.sub(r"^s3://", "", path, count=1).split("/", 1)
+        bucket_paths.setdefault(bucket, set()).add(key)
+
+    def scrape(bucket, prefix):
+        return fetch_bucket_obj_info(
+            bucket, search_prefixes=[prefix], profile=profile, all_versions=all_versions
+        )
+
+    if all_versions:
+        found = {"Versions": [], "DeleteMarkers": []}
+    else:
+        found = []
+
+    # few workers to reduce likelihood of AWS account throttling
+    with ThreadPoolExecutor(max_workers=5) as tpex:
+        futures = {
+            tpex.submit(scrape, bucket, os.path.commonpath(keys)): bucket
+            for bucket, keys in bucket_paths.items()
+        }
+        for f in as_completed(futures):
+            objects = f.result()
+            if all_versions:
+                found["Versions"].extend(
+                    o
+                    for o in objects["Versions"]
+                    if o["Key"] in bucket_paths[futures[f]]
+                )
+                found["DeleteMarkers"].extend(
+                    o
+                    for o in objects["DeleteMarkers"]
+                    if o["Key"] in bucket_paths[futures[f]]
+                )
+            else:
+                found.extend(o for o in objects if o["Key"] in bucket_paths[futures[f]])
+
+    return found
 
 
 def fetch_bucket_obj_info(
