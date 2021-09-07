@@ -25,7 +25,10 @@ def fetch_obj_list_info(pathlist, profile="saml", all_versions=False):
 
     def scrape(bucket, prefix):
         return fetch_bucket_obj_info(
-            bucket, search_prefixes=[prefix], profile=profile, all_versions=all_versions
+            bucket,
+            search_prefixes=[prefix],
+            profile=profile,
+            all_versions=all_versions,
         )
 
     if all_versions:
@@ -53,7 +56,9 @@ def fetch_obj_list_info(pathlist, profile="saml", all_versions=False):
                     if o["Key"] in bucket_paths[futures[f]]
                 )
             else:
-                found.extend(o for o in objects if o["Key"] in bucket_paths[futures[f]])
+                found.extend(
+                    o for o in objects if o["Key"] in bucket_paths[futures[f]]
+                )
 
     return found
 
