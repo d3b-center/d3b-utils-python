@@ -1,5 +1,6 @@
 import csv
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
 import boto3
@@ -15,8 +16,7 @@ def fetch_bucket_obj_info(
     all_versions=False,
 ):
     """
-    List the objects of a bucket and the size of each object. Returns a
-    list of dicts.
+    List the metadata for objects in a given S3 bucket.
 
     :param bucket_name: The name of the bucket.
     :type bucket_name: str
@@ -38,23 +38,21 @@ def fetch_bucket_obj_info(
     :type output_filename: str, optional
     :param delim: If writing output to a delimited file, use this delimiter
     :type delim: str, optional, default based on output_filename extension
-    :param profile: aws profile
+    :param profile: AWS SAML single-sign-on profile to use, defaults to "saml"
     :type profile: str, optional
     :param all_versions: get all object versions (and delete markers) instead
-        of only getting current bucket contents.
+        of only getting current bucket contents, defaults to False
     :type all_versions: bool, optional
 
-    :returns: list of dicts. If all_versions is False, each dict has
+    :return: If all_versions is False, list of dicts where each dict has
         information about each object in the bucket (or each object that has
-        a path matching the search_prefixes). If all_versions is True, the
-        list of dicts has two items, Versions and DeleteMarkers, each
-        containing a list of dicts of Versions and DeleteMarkers
-        respectively, i.e.:
+        a path matching the search_prefixes). If all_versions is True, a dict
+        with two items, Versions and DeleteMarkers, each containing a list of
+        dicts of Versions and DeleteMarkers objects respectively, i.e.:
         {
             Versions: [{version-a}, ... {version-n}],
             DeleteMarkers: [{delete_marker-a}, ... {delete_marker-n}],
         }
-
     """
     # Check output filename
     if output_filename:
@@ -70,14 +68,16 @@ def fetch_bucket_obj_info(
     search_prefixes = [re.sub(r"^/+", "", prefix) for prefix in search_prefixes]
 
     session = boto3.session.Session(profile_name=profile)
-    if all_versions:
-        paginator = session.client("s3").get_paginator("list_object_versions")
-        results = {"Versions": [], "DeleteMarkers": []}
-    else:
-        paginator = session.client("s3").get_paginator("list_objects_v2")
-        results = {"Contents": []}
+    client = session.client("s3")
 
-    for key_prefix in search_prefixes:
+    def scrape(client, key_prefix):
+        if all_versions:
+            paginator = client.get_paginator("list_object_versions")
+            results = {"Versions": [], "DeleteMarkers": []}
+        else:
+            paginator = client.get_paginator("list_objects_v2")
+            results = {"Contents": []}
+
         for page in paginator.paginate(Bucket=bucket_name, Prefix=key_prefix):
             for content_type, type_storage in results.items():
                 page_entries = [
@@ -88,7 +88,18 @@ def fetch_bucket_obj_info(
                 ]
                 type_storage.extend(page_entries)
 
-    for type_storage in results.values():
+        return results
+
+    all_results = {}
+    # few workers to reduce likelihood of AWS account throttling
+    with ThreadPoolExecutor(max_workers=5) as tpex:
+        for f in as_completed(
+            [tpex.submit(scrape, client, p) for p in search_prefixes]
+        ):
+            for k, v in f.result().items():
+                all_results.setdefault(k, []).extend(v)
+
+    for type_storage in all_results.values():
         for object in type_storage:
             object["Bucket"] = bucket_name
             if "ETag" in object:
@@ -97,8 +108,8 @@ def fetch_bucket_obj_info(
 
     # Write to file
     if output_filename:
-        for content_type, type_storage in results.items():
-            prefix = f"{content_type}-" if len(results) > 1 else ""
+        for content_type, type_storage in all_results.items():
+            prefix = f"{content_type}-" if len(all_results) > 1 else ""
             keys = set(chain(*(d.keys() for d in type_storage)))
             with open(f"{prefix}{output_filename}", "w") as f:
                 dict_writer = csv.DictWriter(
@@ -107,7 +118,7 @@ def fetch_bucket_obj_info(
                 dict_writer.writeheader()
                 dict_writer.writerows(type_storage)
 
-    return results if len(results) > 1 else results.popitem()[1]
+    return all_results if len(all_results) > 1 else all_results.popitem()[1]
 
 
 # backwards compatibility
