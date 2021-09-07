@@ -8,11 +8,9 @@ Python >= 3.6
 
 Using pip
 
-`pip install git+https://github.com/d3b-center/d3b-utils-python.git`
+`pip install -U git+https://github.com/d3b-center/d3b-utils-python.git@latest-release`
 
-## Included so far
-
-### Requests with retries
+## Requests with retries
 
 ```Python
 from d3b_utils.requests_retry import Session
@@ -26,39 +24,36 @@ self-correct, so we should definitely retry them.
 
 Don't use the requests library directly. Use this instead.
 
-### Fetch AWS Bucket contents
+## S3 contents metadata
 
-Before using these functions, make sure to authenticate. Use [`chopaws`](https://github.research.chop.edu/devops/aws-auth-cli).
+### Fetch S3 bucket contents metadata using `fetch_bucket_obj_info`
 
-```Python
-from d3b_utils.aws_bucket_contents import fetch_bucket_obj_info
-```
-
-#### List the items in a bucket
+#### List all the items in a bucket
 
 ```python
-contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
-  search_prefixes="source/pics/"
-)
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
+contents = fetch_bucket_obj_info("my_bucket")
 ```
 
-#### List the items in multiple folders in a bucket
+#### List the items in selected subpaths of a bucket
 
 ```python
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
 contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "my_bucket",
   search_prefixes=["source/pics/", "source/uploads/"]
 )
 ```
 
-#### Drop folders from the list of returned objects
-
-The list of returned objects includes folders. You can drop the folders by setting `drop_folders=True`
+#### Drop folders (keys ending in "/") from the list of returned objects
 
 ```python
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
 contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "my_bucket",
   drop_folders=True,
 )
 ```
@@ -66,8 +61,10 @@ contents = fetch_bucket_obj_info(
 #### Write the contents to a delimited file
 
 ```python
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
 contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "my_bucket",
   search_prefixes="source/pics/",
   drop_folders=True,
   output_filename="my_bucket_contents.tsv"
@@ -76,22 +73,36 @@ contents = fetch_bucket_obj_info(
 
 #### Specify the AWS Profile 
 
-Specify the profile name. If not authenticating with `chopaws`, set the profile name. 
-
 ```python
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
 contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
+  "my_bucket",
   profile="user1"
 )
 ```
 
 #### Get Object versions and delete markers
 
-Return object versions and delete markers. 
+```python
+from d3b_utils.s3_contents import fetch_bucket_obj_info
+
+contents = fetch_bucket_obj_info(
+  "my_bucket",
+  all_versions=True
+)
+```
+
+---
+
+### Fetch S3 metadata for a list of files using `fetch_obj_list_info`
 
 ```python
-contents = fetch_bucket_obj_info(
-  "kf-study-us-east-1-dev-sd-me0wme0w",
-  all_versions=True
+from d3b_utils.s3_contents import fetch_obj_list_info
+
+contents = fetch_obj_list_info(
+  ["s3://bucket1/path1", "bucket2/path2"],
+  profile="user1",
+  all_versions=False
 )
 ```
