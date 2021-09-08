@@ -7,21 +7,60 @@ from itertools import chain
 import boto3
 
 
-def fetch_obj_list_info(pathlist, profile="saml", all_versions=False):
+def _check_delimiter(output_filename, delim=None):
+    """Detect delimiter by filename extension if not set"""
+    if output_filename and (delim is None):
+        delimiters = {"tsv": "\t", "csv": ","}
+        delim = delimiters[output_filename.rsplit(".", 1)[-1].lower()]
+        assert delim, "File output delimiter not known. Cannot proceed."
+
+    return delim
+
+
+def _s3meta_to_file(data, output_filename, delim):
+    """Write results to files"""
+
+    def _write(content, output_filename, delim):
+        keys = set(chain(*(d.keys() for d in content)))
+        with open(output_filename, "w") as f:
+            w = csv.DictWriter(f, restval="", fieldnames=keys, delimiter=delim)
+            w.writeheader()
+            w.writerows(content)
+
+    if output_filename:
+        if isinstance(data, dict):
+            for prefix, storage in data.items():
+                _write(storage, f"{prefix}-{output_filename}", delim)
+        else:
+            _write(data, output_filename, delim)
+
+
+def fetch_obj_list_info(
+    pathlist,
+    output_filename=None,
+    delim=None,
+    profile="saml",
+    all_versions=False,
+):
     """List the metadata for a given set of S3 objects. Like
     fetch_bucket_obj_info but for a list of file paths instead of a bucket.
 
     :param pathlist: list of s3 file paths
     :type pathlist: list
+    :param output_filename: see fetch_bucket_obj_info
+    :param delim: see fetch_bucket_obj_info
     :param profile: see fetch_bucket_obj_info
     :param all_versions: see fetch_bucket_obj_info
 
     :return: see fetch_bucket_obj_info
     """
-    bucket_paths = {}
+    delim = _check_delimiter(output_filename, delim)
+
+    # Group files by their buckets
+    groups = {}
     for path in pathlist:
         bucket, key = re.sub(r"^s3://", "", path, count=1).split("/", 1)
-        bucket_paths.setdefault(bucket, set()).add(key)
+        groups.setdefault(bucket, set()).add(key)
 
     def scrape(bucket, prefix):
         return fetch_bucket_obj_info(
@@ -32,35 +71,32 @@ def fetch_obj_list_info(pathlist, profile="saml", all_versions=False):
         )
 
     if all_versions:
-        found = {"Versions": [], "DeleteMarkers": []}
+        all_results = {"Versions": [], "DeleteMarkers": []}
     else:
-        found = []
+        all_results = []
 
-    # few workers to reduce likelihood of AWS account throttling
+    # List files at the commonpath prefix of our desired files for each
+    # bucket with fetch_bucket_obj_info and only keep the ones we want.
+    # Few threads avoids throttling.
     with ThreadPoolExecutor(max_workers=5) as tpex:
         futures = {
             tpex.submit(scrape, bucket, os.path.commonpath(keys)): bucket
-            for bucket, keys in bucket_paths.items()
+            for bucket, keys in groups.items()
         }
         for f in as_completed(futures):
-            objects = f.result()
+            keep = groups[futures[f]]
             if all_versions:
-                found["Versions"].extend(
-                    o
-                    for o in objects["Versions"]
-                    if o["Key"] in bucket_paths[futures[f]]
-                )
-                found["DeleteMarkers"].extend(
-                    o
-                    for o in objects["DeleteMarkers"]
-                    if o["Key"] in bucket_paths[futures[f]]
-                )
+                for content_type, type_storage in all_results.items():
+                    type_storage.extend(
+                        o for o in f.result()[content_type] if o["Key"] in keep
+                    )
             else:
-                found.extend(
-                    o for o in objects if o["Key"] in bucket_paths[futures[f]]
-                )
+                all_results.extend(o for o in f.result() if o["Key"] in keep)
 
-    return found
+    # Write to file if desired
+    _s3meta_to_file(all_results, output_filename, delim)
+
+    return all_results
 
 
 def fetch_bucket_obj_info(
@@ -111,11 +147,7 @@ def fetch_bucket_obj_info(
             DeleteMarkers: [{delete_marker-a}, ... {delete_marker-n}],
         }
     """
-    # Check output filename
-    if output_filename:
-        delimiters = {"tsv": "\t", "csv": ","}
-        delim = delim or delimiters[output_filename.rsplit(".", 1)[-1].lower()]
-        assert delim, "File output delimiter not known. Cannot proceed."
+    delim = _check_delimiter(output_filename, delim)
 
     search_prefixes = search_prefixes or [""]
     if isinstance(search_prefixes, str):
@@ -130,13 +162,13 @@ def fetch_bucket_obj_info(
     def scrape(client, key_prefix):
         if all_versions:
             paginator = client.get_paginator("list_object_versions")
-            results = {"Versions": [], "DeleteMarkers": []}
+            prefix_results = {"Versions": [], "DeleteMarkers": []}
         else:
             paginator = client.get_paginator("list_objects_v2")
-            results = {"Contents": []}
+            prefix_results = {"Contents": []}
 
         for page in paginator.paginate(Bucket=bucket_name, Prefix=key_prefix):
-            for content_type, type_storage in results.items():
+            for content_type, type_storage in prefix_results.items():
                 page_entries = [
                     entry
                     for entry in page.get(content_type, [])
@@ -145,9 +177,10 @@ def fetch_bucket_obj_info(
                 ]
                 type_storage.extend(page_entries)
 
-        return results
+        return prefix_results
 
     all_results = {}
+
     # few workers to reduce likelihood of AWS account throttling
     with ThreadPoolExecutor(max_workers=5) as tpex:
         for f in as_completed(
@@ -163,19 +196,13 @@ def fetch_bucket_obj_info(
                 # ETag comes back with unnecessary quotation marks, so strip them
                 object["ETag"] = object["ETag"].strip('"')
 
-    # Write to file
-    if output_filename:
-        for content_type, type_storage in all_results.items():
-            prefix = f"{content_type}-" if len(all_results) > 1 else ""
-            keys = set(chain(*(d.keys() for d in type_storage)))
-            with open(f"{prefix}{output_filename}", "w") as f:
-                dict_writer = csv.DictWriter(
-                    f, restval="", fieldnames=keys, delimiter=delim
-                )
-                dict_writer.writeheader()
-                dict_writer.writerows(type_storage)
+    # Convert to list if not versioned (historical)
+    all_results = all_results if all_versions else all_results.popitem()[1]
 
-    return all_results if len(all_results) > 1 else all_results.popitem()[1]
+    # Write to file if desired
+    _s3meta_to_file(all_results, output_filename, delim)
+
+    return all_results
 
 
 # backwards compatibility
