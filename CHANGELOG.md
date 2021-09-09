@@ -1,5 +1,17 @@
 # D3b Python Utilities Change History
 
+## Release 0.6.0
+
+### Summary
+
+- Emojis: ✨ x1
+- Categories: Additions x1
+
+### New features and changes
+
+- [#21](https://github.com/d3b-center/d3b-utils-python/pull/21) - ✨ Add function to get metadata for list of s3 paths - [e4fd080a](https://github.com/d3b-center/d3b-utils-python/commit/e4fd080a24bcabfa37a5fb58db3c3b80126f4a7f) by [fiendish](https://github.com/fiendish)
+
+
 ## Release 0.5.1
 
 ### Summary
