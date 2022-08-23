@@ -71,7 +71,7 @@ contents = fetch_bucket_obj_info(
 )
 ```
 
-#### Specify the AWS Profile 
+#### Specify the AWS Profile
 
 ```python
 from d3b_utils.s3_contents import fetch_bucket_obj_info
@@ -106,3 +106,28 @@ contents = fetch_obj_list_info(
   all_versions=False
 )
 ```
+
+## GCS contents metadata
+
+### Fetch GCS bucket contents metadata using `fetch_bucket_obj_info`
+
+#### List all the items in a bucket
+
+To authenticate with gcs, the environment variable
+`GOOGLE_APPLICATION_CREDENTIALS` should exist and point to a google credential
+json file.  See
+[here](https://cloud.google.com/docs/authentication/provide-credentials-adc)
+for more information.
+
+```python
+from d3b_utils.gcs_contents import fetch_bucket_obj_info
+
+contents = fetch_bucket_obj_info("my_bucket")
+```
+
+See the related s3 functions above for options `search_prefixes`,
+output_filename`, and`delim`.
+
+n.b. while for s3, there is an option to `drop_folders`, gcp automatically
+drops them when returning lists of files. Likewise, file versions are currently
+not supported here.
