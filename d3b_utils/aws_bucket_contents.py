@@ -1,2 +1,2 @@
 # backwards compatibility shim
-from .s3_contents import *  # noqa
+from .scrape.s3_contents import *  # noqa
