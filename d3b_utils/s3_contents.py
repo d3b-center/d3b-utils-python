@@ -21,7 +21,7 @@ def _s3meta_to_file(data, output_filename, delim):
     """Write results to files"""
 
     def _write(content, output_filename, delim):
-        keys = set(chain(*(d.keys() for d in content)))
+        keys = sorted(set(chain(*(d.keys() for d in content))))
         with open(output_filename, "w") as f:
             w = csv.DictWriter(f, restval="", fieldnames=keys, delimiter=delim)
             w.writeheader()
