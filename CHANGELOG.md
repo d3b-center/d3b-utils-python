@@ -1,5 +1,17 @@
 # D3b Python Utilities Change History
 
+## Release 0.7.0
+
+### Summary
+
+- Emojis: ? x1
+- Categories: Other Changes x1
+
+### New features and changes
+
+- [#26](https://github.com/d3b-center/d3b-utils-python/pull/26) -  Sort column keys before writing - [aff4fd0f](https://github.com/d3b-center/d3b-utils-python/commit/aff4fd0f3cece21ab2be60ba7fc61404872c8016) by [fiendish](https://github.com/fiendish)
+
+
 ## Release 0.6.0
 
 ### Summary
