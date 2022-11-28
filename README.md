@@ -106,3 +106,18 @@ contents = fetch_obj_list_info(
   all_versions=False
 )
 ```
+
+## Test connection to a postgres database
+
+```python
+from d3b_utils.database import test_pg_connection
+
+db_url = "postgresql://username:password@localhost:5432/postgres"
+
+if test_pg_connection(db_url):
+  print("Able to connect to postgres")
+else:
+  print("Unable to connect to database")
+```
+
+Test if it's possible to connect to a postgres database. Useful if your script needs to do different things depending on if it's possible to connect to the postgres database of interest. Is usefull because psycopg2 will retry connecting for an extended amount of time if there are issues with conection to the database.
